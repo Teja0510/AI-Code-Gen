@@ -50,22 +50,27 @@ const Profile = () => {
       setUserProfile(profile);
 
       // Fetch user's components
-      const { data: components } = await supabase
+      const { data: components, error: componentsError } = await supabase
         .from('components')
         .select(`
           *,
-          profiles (*)
+          profiles!inner (*)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      setUserComponents((components as any) || []);
+      if (componentsError) {
+        console.error('User components error:', componentsError);
+      }
+
+      console.log('User components:', components);
+      setUserComponents(components || []);
 
       // Fetch saved components
-      const { data: saved } = await supabase
+      const { data: saved, error: savedError } = await supabase
         .from('saved_components')
         .select(`
-          components (
+          components!inner (
             *,
             profiles (*)
           )
@@ -73,12 +78,17 @@ const Profile = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
+      if (savedError) {
+        console.error('Saved components error:', savedError);
+      }
+
       const savedComponentsData: Component[] = saved?.map((item: any) => ({
         ...item.components,
         profiles: item.components.profiles,
         is_saved: true
       })) || [];
 
+      console.log('Saved components:', savedComponentsData);
       setSavedComponents(savedComponentsData);
     } catch (error) {
       console.error('Error fetching user data:', error);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,7 +35,7 @@ const Home = () => {
         const { data: savedData, error: savedError } = await supabase
           .from('saved_components')
           .select(`
-            components (
+            components!inner (
               *,
               profiles (*)
             )
@@ -44,7 +43,10 @@ const Home = () => {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
-        if (savedError) throw savedError;
+        if (savedError) {
+          console.error('Saved components error:', savedError);
+          throw savedError;
+        }
 
         const savedComponents: Component[] = savedData?.map((item: any) => ({
           ...item.components,
@@ -76,7 +78,7 @@ const Home = () => {
           .from('components')
           .select(`
             *,
-            profiles (*)
+            profiles!inner (*)
           `);
 
         if (sortBy === 'trending') {
@@ -87,9 +89,14 @@ const Home = () => {
 
         const { data, error } = await query;
 
-        if (error) throw error;
+        if (error) {
+          console.error('Components fetch error:', error);
+          throw error;
+        }
 
-        const componentsData: Component[] = (data as any) || [];
+        console.log('Fetched components:', data);
+
+        const componentsData: Component[] = data || [];
 
         // Check if components are liked/saved by current user
         if (user && componentsData.length > 0) {
