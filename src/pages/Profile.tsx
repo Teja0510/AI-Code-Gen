@@ -59,14 +59,13 @@ const Profile = () => {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      setUserComponents(components as Component[] || []);
+      setUserComponents((components as any) || []);
 
       // Fetch saved components
       const { data: saved } = await supabase
         .from('saved_components')
         .select(`
-          component_id,
-          components!inner (
+          components (
             *,
             profiles (*)
           )

@@ -36,8 +36,7 @@ const Home = () => {
         const { data: savedData, error: savedError } = await supabase
           .from('saved_components')
           .select(`
-            component_id,
-            components!inner (
+            components (
               *,
               profiles (*)
             )
@@ -90,7 +89,7 @@ const Home = () => {
 
         if (error) throw error;
 
-        const componentsData: Component[] = data || [];
+        const componentsData: Component[] = (data as any) || [];
 
         // Check if components are liked/saved by current user
         if (user && componentsData.length > 0) {
