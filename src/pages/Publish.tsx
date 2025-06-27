@@ -193,7 +193,7 @@ const Publish = () => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-white">
-                  Tags
+                  Language
                 </label>
                 <div className="flex gap-2">
                   <Input
@@ -202,13 +202,13 @@ const Publish = () => {
                     value={formData.tagInput}
                     onChange={(e) => setFormData(prev => ({ ...prev, tagInput: e.target.value }))}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleTagAdd())}
-                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                    className="uppercase bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                   />
                   <Button
                     type="button"
                     onClick={handleTagAdd}
                     variant="outline"
-                    className="border-white/20 text-white hover:bg-white/10"
+                    className="border-white/20 text-black hover:bg-white/10"
                   >
                     Add
                   </Button>
@@ -219,7 +219,7 @@ const Publish = () => {
                       <Badge
                         key={index}
                         variant="secondary"
-                        className="bg-white/10 text-white border-white/20 flex items-center gap-1"
+                        className="uppercase bg-white/10 text-white border-white/20 flex items-center gap-1"
                       >
                         {tag}
                         <button
@@ -260,7 +260,7 @@ const Publish = () => {
                   type="button"
                   variant="outline"
                   onClick={() => navigate('/')}
-                  className="flex-1 border-white/20 text-white hover:bg-white/10"
+                  className="flex-1 border-white/20 text-black hover:bg-white/10"
                 >
                   Cancel
                 </Button>
