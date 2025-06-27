@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 type Component = Tables<'components'> & {
-  profiles: Tables<'profiles'>;
+  profiles: Tables<'profiles'> | null;
   is_liked?: boolean;
   is_saved?: boolean;
 };
@@ -117,14 +117,16 @@ const ComponentCard: React.FC<ComponentCardProps> = ({
               </p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onExpand}
-            className="text-white hover:bg-white/10"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
+          {onExpand && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onExpand}
+              className="text-white hover:bg-white/10"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <div>
           <h3 className="text-lg font-semibold text-white mb-2">{component.title}</h3>

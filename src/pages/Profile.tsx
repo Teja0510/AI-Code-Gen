@@ -13,7 +13,7 @@ import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
 type Component = Tables<'components'> & {
-  profiles: Tables<'profiles'>;
+  profiles: Tables<'profiles'> | null;
   is_liked?: boolean;
   is_saved?: boolean;
 };
@@ -54,7 +54,7 @@ const Profile = () => {
         .from('components')
         .select(`
           *,
-          profiles:user_id (*)
+          profiles (*)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -65,15 +65,16 @@ const Profile = () => {
       const { data: saved } = await supabase
         .from('saved_components')
         .select(`
-          components:component_id (
+          component_id,
+          components!inner (
             *,
-            profiles:user_id (*)
+            profiles (*)
           )
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      const savedComponentsData = saved?.map((item: any) => ({
+      const savedComponentsData: Component[] = saved?.map((item: any) => ({
         ...item.components,
         profiles: item.components.profiles,
         is_saved: true
