@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,15 +32,10 @@ const Home = () => {
       setLoading(true);
       
       if (sortBy === 'saved' && user) {
-        // For saved components, we need to join through saved_components table
+        // For saved components, fetch saved components first
         const { data: savedData, error: savedError } = await supabase
           .from('saved_components')
-          .select(`
-            components (
-              *,
-              profiles (*)
-            )
-          `)
+          .select('component_id, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -48,38 +44,62 @@ const Home = () => {
           throw savedError;
         }
 
-        const savedComponents: Component[] = savedData?.map((item: any) => ({
-          ...item.components,
-          profiles: item.components?.profiles || null,
-          is_saved: true
-        })) || [];
-
-        // Check likes for saved components
-        if (savedComponents.length > 0) {
-          const componentIds = savedComponents.map(c => c.id);
-          const { data: likesData } = await supabase
-            .from('likes')
-            .select('component_id')
-            .eq('user_id', user.id)
-            .in('component_id', componentIds);
-
-          const likedIds = new Set(likesData?.map(l => l.component_id) || []);
+        if (savedData && savedData.length > 0) {
+          const componentIds = savedData.map(item => item.component_id);
           
-          setComponents(savedComponents.map(component => ({
+          // Fetch the actual components
+          const { data: componentsData, error: componentsError } = await supabase
+            .from('components')
+            .select('*')
+            .in('id', componentIds);
+
+          if (componentsError) {
+            console.error('Components error:', componentsError);
+            throw componentsError;
+          }
+
+          // Fetch profiles separately
+          const userIds = componentsData?.map(c => c.user_id) || [];
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('id', userIds);
+
+          // Create a map of profiles by user_id
+          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+          // Combine components with profiles
+          const savedComponents: Component[] = (componentsData || []).map((component) => ({
             ...component,
-            is_liked: likedIds.has(component.id)
-          })));
+            profiles: profilesMap.get(component.user_id) || null,
+            is_saved: true
+          }));
+
+          // Check likes for saved components
+          if (savedComponents.length > 0) {
+            const { data: likesData } = await supabase
+              .from('likes')
+              .select('component_id')
+              .eq('user_id', user.id)
+              .in('component_id', componentIds);
+
+            const likedIds = new Set(likesData?.map(l => l.component_id) || []);
+            
+            setComponents(savedComponents.map(component => ({
+              ...component,
+              is_liked: likedIds.has(component.id)
+            })));
+          } else {
+            setComponents([]);
+          }
         } else {
           setComponents([]);
         }
       } else {
-        // For regular components feed - use left join to make profiles optional
+        // For regular components feed - fetch components without join
         let query = supabase
           .from('components')
-          .select(`
-            *,
-            profiles (*)
-          `);
+          .select('*');
 
         if (sortBy === 'trending') {
           query = query.order('likes_count', { ascending: false });
@@ -87,53 +107,68 @@ const Home = () => {
           query = query.order('created_at', { ascending: false });
         }
 
-        const { data, error } = await query;
+        const { data: componentsData, error } = await query;
 
         if (error) {
           console.error('Components fetch error:', error);
           throw error;
         }
 
-        console.log('Fetched components:', data);
+        console.log('Fetched components:', componentsData);
 
-        // Transform data to ensure proper typing and handle missing profiles
-        const componentsData: Component[] = (data || []).map((item: any) => ({
-          ...item,
-          profiles: item.profiles || null
-        }));
+        if (componentsData && componentsData.length > 0) {
+          // Fetch profiles separately
+          const userIds = [...new Set(componentsData.map(c => c.user_id))];
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('id', userIds);
 
-        // Check if components are liked/saved by current user
-        if (user && componentsData.length > 0) {
-          const componentIds = componentsData.map(c => c.id);
-          
-          const [likesResult, savesResult] = await Promise.all([
-            supabase
-              .from('likes')
-              .select('component_id')
-              .eq('user_id', user.id)
-              .in('component_id', componentIds),
-            supabase
-              .from('saved_components')
-              .select('component_id')
-              .eq('user_id', user.id)
-              .in('component_id', componentIds)
-          ]);
+          // Create a map of profiles by user_id
+          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
 
-          const likedIds = new Set(likesResult.data?.map(l => l.component_id) || []);
-          const savedIds = new Set(savesResult.data?.map(s => s.component_id) || []);
-
-          setComponents(componentsData.map(component => ({
+          // Combine components with profiles
+          const componentsWithProfiles: Component[] = componentsData.map((component) => ({
             ...component,
-            is_liked: likedIds.has(component.id),
-            is_saved: savedIds.has(component.id)
-          })));
+            profiles: profilesMap.get(component.user_id) || null
+          }));
+
+          // Check if components are liked/saved by current user
+          if (user) {
+            const componentIds = componentsData.map(c => c.id);
+            
+            const [likesResult, savesResult] = await Promise.all([
+              supabase
+                .from('likes')
+                .select('component_id')
+                .eq('user_id', user.id)
+                .in('component_id', componentIds),
+              supabase
+                .from('saved_components')
+                .select('component_id')
+                .eq('user_id', user.id)
+                .in('component_id', componentIds)
+            ]);
+
+            const likedIds = new Set(likesResult.data?.map(l => l.component_id) || []);
+            const savedIds = new Set(savesResult.data?.map(s => s.component_id) || []);
+
+            setComponents(componentsWithProfiles.map(component => ({
+              ...component,
+              is_liked: likedIds.has(component.id),
+              is_saved: savedIds.has(component.id)
+            })));
+          } else {
+            setComponents(componentsWithProfiles);
+          }
         } else {
-          setComponents(componentsData);
+          setComponents([]);
         }
       }
     } catch (error) {
       console.error('Error fetching components:', error);
       toast.error('Failed to load components');
+      setComponents([]);
     } finally {
       setLoading(false);
     }

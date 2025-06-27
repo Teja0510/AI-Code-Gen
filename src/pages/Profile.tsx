@@ -49,13 +49,10 @@ const Profile = () => {
 
       setUserProfile(profile);
 
-      // Fetch user's components
+      // Fetch user's components (without join)
       const { data: components, error: componentsError } = await supabase
         .from('components')
-        .select(`
-          *,
-          profiles (*)
-        `)
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -65,23 +62,18 @@ const Profile = () => {
 
       console.log('User components:', components);
       
-      // Transform data to ensure proper typing and handle missing profiles
-      const userComponentsData: Component[] = (components || []).map((item: any) => ({
-        ...item,
-        profiles: item.profiles || null
+      // Add profile data to components
+      const userComponentsData: Component[] = (components || []).map((component) => ({
+        ...component,
+        profiles: profile || null
       }));
       
       setUserComponents(userComponentsData);
 
       // Fetch saved components
-      const { data: saved, error: savedError } = await supabase
+      const { data: savedComponentIds, error: savedError } = await supabase
         .from('saved_components')
-        .select(`
-          components (
-            *,
-            profiles (*)
-          )
-        `)
+        .select('component_id, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -89,14 +81,44 @@ const Profile = () => {
         console.error('Saved components error:', savedError);
       }
 
-      const savedComponentsData: Component[] = saved?.map((item: any) => ({
-        ...item.components,
-        profiles: item.components?.profiles || null,
-        is_saved: true
-      })) || [];
+      if (savedComponentIds && savedComponentIds.length > 0) {
+        const componentIds = savedComponentIds.map(item => item.component_id);
+        
+        // Fetch the actual saved components
+        const { data: savedComponentsData, error: savedComponentsError } = await supabase
+          .from('components')
+          .select('*')
+          .in('id', componentIds);
 
-      console.log('Saved components:', savedComponentsData);
-      setSavedComponents(savedComponentsData);
+        if (savedComponentsError) {
+          console.error('Saved components data error:', savedComponentsError);
+        }
+
+        if (savedComponentsData && savedComponentsData.length > 0) {
+          // Fetch profiles for saved components
+          const userIds = [...new Set(savedComponentsData.map(c => c.user_id))];
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('id', userIds);
+
+          // Create a map of profiles by user_id
+          const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+
+          const savedComponentsWithProfiles: Component[] = savedComponentsData.map((component) => ({
+            ...component,
+            profiles: profilesMap.get(component.user_id) || null,
+            is_saved: true
+          }));
+
+          console.log('Saved components:', savedComponentsWithProfiles);
+          setSavedComponents(savedComponentsWithProfiles);
+        } else {
+          setSavedComponents([]);
+        }
+      } else {
+        setSavedComponents([]);
+      }
     } catch (error) {
       console.error('Error fetching user data:', error);
       toast.error('Failed to load profile data');
