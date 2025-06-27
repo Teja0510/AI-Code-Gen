@@ -9,7 +9,139 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      components: {
+        Row: {
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          likes_count: number | null
+          preview_image_url: string | null
+          preview_video_url: string | null
+          saves_count: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          likes_count?: number | null
+          preview_image_url?: string | null
+          preview_video_url?: string | null
+          saves_count?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          likes_count?: number | null
+          preview_image_url?: string | null
+          preview_video_url?: string | null
+          saves_count?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      likes: {
+        Row: {
+          component_id: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          component_id: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          component_id?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "likes_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      saved_components: {
+        Row: {
+          component_id: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          component_id: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          component_id?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_components_component_id_fkey"
+            columns: ["component_id"]
+            isOneToOne: false
+            referencedRelation: "components"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
