@@ -35,7 +35,7 @@ const Home = () => {
         const { data: savedData, error: savedError } = await supabase
           .from('saved_components')
           .select(`
-            components!inner (
+            components (
               *,
               profiles (*)
             )
@@ -50,7 +50,7 @@ const Home = () => {
 
         const savedComponents: Component[] = savedData?.map((item: any) => ({
           ...item.components,
-          profiles: item.components.profiles,
+          profiles: item.components?.profiles || null,
           is_saved: true
         })) || [];
 
@@ -73,12 +73,12 @@ const Home = () => {
           setComponents([]);
         }
       } else {
-        // For regular components feed
+        // For regular components feed - use left join to make profiles optional
         let query = supabase
           .from('components')
           .select(`
             *,
-            profiles!inner (*)
+            profiles (*)
           `);
 
         if (sortBy === 'trending') {
@@ -96,7 +96,11 @@ const Home = () => {
 
         console.log('Fetched components:', data);
 
-        const componentsData: Component[] = data || [];
+        // Transform data to ensure proper typing and handle missing profiles
+        const componentsData: Component[] = (data || []).map((item: any) => ({
+          ...item,
+          profiles: item.profiles || null
+        }));
 
         // Check if components are liked/saved by current user
         if (user && componentsData.length > 0) {

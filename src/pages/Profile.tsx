@@ -54,7 +54,7 @@ const Profile = () => {
         .from('components')
         .select(`
           *,
-          profiles!inner (*)
+          profiles (*)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -64,13 +64,20 @@ const Profile = () => {
       }
 
       console.log('User components:', components);
-      setUserComponents(components || []);
+      
+      // Transform data to ensure proper typing and handle missing profiles
+      const userComponentsData: Component[] = (components || []).map((item: any) => ({
+        ...item,
+        profiles: item.profiles || null
+      }));
+      
+      setUserComponents(userComponentsData);
 
       // Fetch saved components
       const { data: saved, error: savedError } = await supabase
         .from('saved_components')
         .select(`
-          components!inner (
+          components (
             *,
             profiles (*)
           )
@@ -84,7 +91,7 @@ const Profile = () => {
 
       const savedComponentsData: Component[] = saved?.map((item: any) => ({
         ...item.components,
-        profiles: item.components.profiles,
+        profiles: item.components?.profiles || null,
         is_saved: true
       })) || [];
 
