@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -51,6 +50,26 @@ const Publish = () => {
     }));
   };
 
+  const handleImageUpload = async (selectedFile: File) => {
+    const fileExt = selectedFile.name.split('.').pop();
+    const fileName = `${Math.random()}.${fileExt}`;
+    const filePath = `previews/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('output-images') // <-- bucket name here
+      .upload(filePath, selectedFile, { upsert: true });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return null;
+    } else {
+      const { data: urlData } = supabase.storage
+        .from('output-images') // <-- bucket name here
+        .getPublicUrl(filePath);
+      return urlData.publicUrl;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -67,22 +86,7 @@ const Publish = () => {
 
       // Upload preview image if provided
       if (previewImage) {
-        const fileExt = previewImage.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
-        const filePath = `previews/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-          .from('component-previews')
-          .upload(filePath, previewImage);
-
-        if (uploadError) {
-          console.error('Upload error:', uploadError);
-        } else {
-          const { data: urlData } = supabase.storage
-            .from('component-previews')
-            .getPublicUrl(filePath);
-          previewImageUrl = urlData.publicUrl;
-        }
+        previewImageUrl = await handleImageUpload(previewImage);
       }
 
       // Insert component

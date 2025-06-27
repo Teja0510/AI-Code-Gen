@@ -221,6 +221,7 @@ const Profile = () => {
                     component={component}
                     onLike={fetchUserData}
                     onSave={fetchUserData}
+                    onDelete={fetchUserData}
                   />
                 ))}
               </div>
@@ -256,6 +257,7 @@ const Profile = () => {
                     component={component}
                     onLike={fetchUserData}
                     onSave={fetchUserData}
+                    onDelete={fetchUserData}
                   />
                 ))}
               </div>

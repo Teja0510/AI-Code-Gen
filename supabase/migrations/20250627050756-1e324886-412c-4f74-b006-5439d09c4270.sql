@@ -1,4 +1,3 @@
-
 -- Create profiles table for additional user information
 CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
@@ -62,6 +61,24 @@ CREATE POLICY "Users can insert their own profile"
 CREATE POLICY "Users can update their own profile"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = id);
+
+CREATE POLICY "Authenticated can upload" ON storage.objects
+FOR INSERT TO authenticated
+WITH CHECK (bucket_id = 'avatars');
+
+CREATE POLICY "Public can read" ON storage.objects
+FOR SELECT USING (bucket_id = 'avatars');
+
+CREATE POLICY "Authenticated can upload output images"
+  ON storage.objects
+  FOR INSERT TO authenticated
+  WITH CHECK (bucket_id = 'output-images');
+
+-- Allow public read access to output images
+CREATE POLICY "Public can read output images"
+  ON storage.objects
+  FOR SELECT
+  USING (bucket_id = 'output-images');
 
 -- Components policies
 CREATE POLICY "Components are viewable by everyone"
