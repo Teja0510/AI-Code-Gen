@@ -65,7 +65,7 @@ const EditProfile = () => {
         onSubmit={handleSave}
         className="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-lg w-full max-w-md"
       >
-        <h2 className="text-2xl font-bold text-white mb-6">Edit Profile</h2>
+        <h2 className="text-2xl font-bold text-black mb-6">Edit Profile</h2>
         <div className="flex flex-col items-center mb-6">
           <Avatar className="h-24 w-24 mb-2">
             <AvatarImage src={avatarUrl} />
