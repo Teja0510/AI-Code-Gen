@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import ComponentCard from '@/components/ComponentCard';
 import Navbar from '@/components/Navbar';
+import CodeGenerator from '@/components/CodeGenerator';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, TrendingUp, Clock, Bookmark } from 'lucide-react';
+import { Search, TrendingUp, Clock, Bookmark, Wand2 } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { toast } from 'sonner';
 
@@ -22,6 +22,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'trending' | 'saved'>('newest');
+  const [showCodeGenerator, setShowCodeGenerator] = useState(false);
 
   useEffect(() => {
     fetchComponents();
@@ -232,9 +233,23 @@ const Home = () => {
                   Saved
                 </Button>
               )}
+              <Button
+                variant={showCodeGenerator ? 'default' : 'ghost'}
+                onClick={() => setShowCodeGenerator(!showCodeGenerator)}
+                className="text-white hover:bg-white/10"
+              >
+                <Wand2 className="h-4 w-4 mr-2" />
+                AI Generator
+              </Button>
             </div>
           </div>
         </div>
+
+        {showCodeGenerator && (
+          <div className="mb-8">
+            <CodeGenerator />
+          </div>
+        )}
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
