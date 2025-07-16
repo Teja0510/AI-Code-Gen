@@ -16,11 +16,17 @@ import { toast } from 'sonner';
 const Publish = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // Check for generated code from localStorage
+  const generatedCode = localStorage.getItem('generatedCode');
+  const generatedLanguage = localStorage.getItem('generatedLanguage');
+  const generatedPrompt = localStorage.getItem('generatedPrompt');
+  
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    code: '',
-    tags: [] as string[],
+    title: generatedPrompt ? `Generated ${generatedLanguage} Component` : '',
+    description: generatedPrompt || '',
+    code: generatedCode || '',
+    tags: generatedLanguage ? [generatedLanguage.toUpperCase()] : [] as string[],
     tagInput: '',
   });
   const [previewImage, setPreviewImage] = useState<File | null>(null);
@@ -30,7 +36,14 @@ const Publish = () => {
     if (!user) {
       navigate('/auth');
     }
-  }, [user, navigate]);
+    
+    // Clear localStorage after using the data
+    if (generatedCode) {
+      localStorage.removeItem('generatedCode');
+      localStorage.removeItem('generatedLanguage');
+      localStorage.removeItem('generatedPrompt');
+    }
+  }, [user, navigate, generatedCode]);
 
   const handleTagAdd = () => {
     const tag = formData.tagInput.trim();
@@ -56,7 +69,7 @@ const Publish = () => {
     const filePath = `previews/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
-      .from('output-images') // <-- bucket name here
+      .from('output-images')
       .upload(filePath, selectedFile, { upsert: true });
 
     if (uploadError) {
@@ -64,7 +77,7 @@ const Publish = () => {
       return null;
     } else {
       const { data: urlData } = supabase.storage
-        .from('output-images') // <-- bucket name here
+        .from('output-images')
         .getPublicUrl(filePath);
       return urlData.publicUrl;
     }
@@ -84,12 +97,10 @@ const Publish = () => {
     try {
       let previewImageUrl = null;
 
-      // Upload preview image if provided
       if (previewImage) {
         previewImageUrl = await handleImageUpload(previewImage);
       }
 
-      // Insert component
       const { error } = await supabase
         .from('components')
         .insert({

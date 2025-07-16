@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Copy, Wand2, Loader2 } from 'lucide-react';
+import { Copy, Wand2, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const CodeGenerator = () => {
+  const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
   const [language, setLanguage] = useState('typescript');
   const [generatedCode, setGeneratedCode] = useState('');
@@ -46,6 +48,17 @@ const CodeGenerator = () => {
     } catch (error) {
       toast.error('Failed to copy code');
     }
+  };
+
+  const useThisCode = () => {
+    // Store the generated code in localStorage to pass to the publish page
+    localStorage.setItem('generatedCode', generatedCode);
+    localStorage.setItem('generatedLanguage', language);
+    localStorage.setItem('generatedPrompt', prompt);
+    
+    // Navigate to publish page
+    navigate('/publish');
+    toast.success('Code sent to publish page!');
   };
 
   return (
@@ -89,15 +102,25 @@ const CodeGenerator = () => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h3 className="text-white font-medium">Generated Code:</h3>
-              <Button
-                onClick={copyToClipboard}
-                variant="outline"
-                size="sm"
-                className="border-white/20 text-white hover:bg-white/10"
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                Copy
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={copyToClipboard}
+                  variant="outline"
+                  size="sm"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy
+                </Button>
+                <Button
+                  onClick={useThisCode}
+                  size="sm"
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Use This Code
+                </Button>
+              </div>
             </div>
             <Textarea
               value={generatedCode}
